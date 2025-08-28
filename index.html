@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socratic Mind</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -179,24 +180,6 @@
             50% { transform: translateY(-80px) rotate(720deg) scale(0.5); opacity: 0; }
             100% { transform: translateY(0) rotate(0); }
         }
-        
-        #tutor-bot-container.fly {
-            animation: bot-fly-across 3.5s ease-in-out 1;
-        }
-        @keyframes bot-fly-across {
-            0% {
-                transform: translateX(-50vw) translateY(0) rotate(0deg);
-            }
-            30% {
-                transform: translateX(0) translateY(-10vh) rotate(20deg);
-            }
-            70% {
-                transform: translateX(50vw) translateY(-15vh) rotate(-20deg);
-            }
-            100% {
-                transform: translateX(150vw) translateY(0vh) rotate(30deg);
-            }
-        }
 
         #chat-container {
             position: fixed;
@@ -243,6 +226,20 @@
             </div>
         </div>
     </div>
+
+    <!-- MODIFICATION: Added header for language dropdown -->
+    <header class="fixed top-0 right-0 p-4 z-20">
+        <div class="relative">
+            <select id="language-selector" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg appearance-none pr-8 cursor-pointer hover:bg-gray-600 transition">
+                <option value="en">English</option>
+                <option value="ta">தமிழ்</option>
+                <option value="hi">हिन्दी</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            </div>
+        </div>
+    </header>
 
     <!-- Chat UI -->
     <div id="chat-ui-container" class="fixed bottom-0 left-0 right-0 w-full">
@@ -400,6 +397,7 @@
         const imagePreviewContainer = document.getElementById('image-preview-container');
         const imagePreview = document.getElementById('image-preview');
         const removeImageBtn = document.getElementById('remove-image');
+        const languageSelector = document.getElementById('language-selector');
 
         let chatHistory = [];
         let imageBase64 = null;
@@ -407,31 +405,33 @@
 
         const translations = {
             en: {
-                placeholder: "Ask a question or change language...",
+                placeholder: "Ask a math question...",
                 hint: "Hint, please! 💡",
-                welcome: "Hello! I'm Socratic Mind. Let's solve some problems! 🚀 You can also say 'switch to tamil' or 'use hindi'.",
+                welcome: "Hello! I'm Socratic Mind. Let's solve some problems! 🚀",
                 connectionError: "<p>I seem to be having a little trouble connecting. Please try again in a moment.</p>",
-                languageChanged: "Okay, I've switched to English."
             },
             ta: {
-                placeholder: "கேள்வி கேளுங்கள் அல்லது மொழியை மாற்றுங்கள்...",
+                placeholder: "ஒரு கணிதக் கேள்வியைக் கேளுங்கள்...",
                 hint: "குறிப்பு, தயவுசெய்து! 💡",
-                welcome: "வணக்கம்! நான் சாக்ரடிக் மைண்ட். வாருங்கள் கணக்குகளைத் தீர்ப்போம்! 🚀 'ஆங்கிலத்திற்கு மாறு' அல்லது 'ஹிந்தியைப் பயன்படுத்து' என்றும் நீங்கள் கூறலாம்.",
+                welcome: "வணக்கம்! நான் சாக்ரடிக் மைண்ட். வாருங்கள் சேர்ந்து சில கணக்குகளைத் தீர்ப்போம்! 🚀",
                 connectionError: "<p>இணைப்பதில் ஒரு சிறிய சிக்கல் உள்ளது. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.</p>",
-                languageChanged: "சரி, நான் தமிழுக்கு மாறிவிட்டேன்."
             },
             hi: {
-                placeholder: "प्रश्न पूछें या भाषा बदलें...",
+                placeholder: "एक गणित का प्रश्न पूछें...",
                 hint: "संकेत, कृपया! 💡",
-                welcome: "नमस्ते! मैं सुकराती मन हूँ। चलो समस्याओं का समाधान करें! 🚀 आप 'अंग्रेजी में बदलें' या 'तमिल का उपयोग करें' भी कह सकते हैं।",
+                welcome: "नमस्ते! मैं सुकराती मन हूँ। चलो मिलकर कुछ समस्याओं का समाधान करें! 🚀",
                 connectionError: "<p>मुझे कनेक्ट होने में थोड़ी परेशानी हो रही है। कृपया कुछ देर में पुन: प्रयास करें।</p>",
-                languageChanged: "ठीक है, मैंने हिंदी में स्विच कर लिया है।"
             }
         };
 
+        // MODIFICATION: Updated setLanguage function
         function setLanguage(lang) {
             currentLanguage = lang;
             problemInput.placeholder = translations[lang].placeholder;
+            // Clear chat and send a new welcome message in the selected language
+            chatContainer.innerHTML = '';
+            appendMessage('ai', translations[lang].welcome);
+            chatHistory = []; // Reset history for the new language context
         }
 
         function setBotState(state) {
@@ -477,7 +477,7 @@
         });
 
         async function callGeminiApi(history) {
-            const apiKey = "AIzaSyCJPZaLsbyaCehMyjHERioggJUO_dMIvZI"; 
+            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             
             const systemPrompt = `You are 'Socratic Mind,' an expert AI math tutor for children. Your SOLE method of teaching is the Socratic method. You MUST respond in the language specified by the user (${currentLanguage}).
@@ -518,33 +518,38 @@
             return "I'm not sure how to respond to that. Could you try rephrasing?";
         }
 
-        // MODIFICATION: Improved language detection to be more flexible
-        function checkForLanguageChange(userInput) {
-            const lowerInput = userInput.toLowerCase();
-            let newLang = null;
-            if (lowerInput.includes('tam') || lowerInput.includes('தமிழ்')) {
-                newLang = 'ta';
-            } else if (lowerInput.includes('hin') || lowerInput.includes('हिन्दी')) {
-                newLang = 'hi';
-            } else if (lowerInput.includes('eng')) {
-                newLang = 'en';
-            }
-            if (newLang && newLang !== currentLanguage) {
-                setLanguage(newLang);
-                appendMessage('ai', translations[newLang].languageChanged);
-                return true;
-            }
-            return false;
+        // MODIFICATION: New animation function
+        function triggerFlyAroundAnimation() {
+            gsap.timeline({
+                onComplete: () => {
+                    // Reset styles after animation to prevent interference
+                    gsap.set(tutorBotContainer, { clearProps: "all" });
+                }
+            })
+            .to(tutorBotContainer, {
+                x: '-40vw', // move left
+                y: '-15vh', // move up
+                rotation: -30,
+                duration: 1,
+                ease: 'power2.inOut'
+            })
+            .to(tutorBotContainer, {
+                x: '40vw', // move right
+                rotation: 30,
+                duration: 1.5,
+                ease: 'power1.inOut'
+            })
+            .to(tutorBotContainer, {
+                x: '0', // return to center X
+                y: '0', // return to center Y
+                rotation: 0,
+                duration: 1,
+                ease: 'bounce.out'
+            });
         }
-
 
         async function handleSubmission(userInput, isHint = false) {
             if (!userInput && !imageBase64) return;
-
-            if (!isHint && checkForLanguageChange(userInput)) {
-                problemInput.value = '';
-                return; 
-            }
 
             const displayInput = isHint ? translations[currentLanguage].hint : userInput;
             appendMessage('user', displayInput, imageBase64);
@@ -568,7 +573,6 @@
                 const solutionText = await callGeminiApi(chatHistory);
                 chatHistory.push({ role: 'model', parts: [{ text: solutionText }] });
 
-                // MODIFICATION: Separated keywords for final answer vs. correct step
                 const finalAnswerKeywords = [
                     "Congratulations", "Amazing job", "You solved it", "math star", 
                     "வாழ்த்துக்கள்", "அற்புதம்",
@@ -576,18 +580,11 @@
                 ];
                 const correctStepKeywords = ["Exactly!", "சரியாக", "बिल्कुल सही"];
 
-                if (finalAnswerKeywords.some(kw => solutionText.includes(kw))) {
-                    // Big celebration for the final answer
+                // MODIFICATION: Trigger fly animation on any correct answer
+                if (finalAnswerKeywords.some(kw => solutionText.includes(kw)) || correctStepKeywords.some(kw => solutionText.includes(kw))) {
                     setBotState('celebrate');
-                    tutorBotContainer.classList.add('fly');
-                    setTimeout(() => {
-                        tutorBotContainer.classList.remove('fly');
-                    }, 3500);
-                } else if (correctStepKeywords.some(kw => solutionText.includes(kw))) {
-                    // Small celebration for a correct step
-                    setBotState('celebrate');
-                }
-                else if (["Not quite", "You're close!", "Let's double-check", "சரியில்லை", "लगभग सही"].some(kw => solutionText.includes(kw))) {
+                    triggerFlyAroundAnimation();
+                } else if (["Not quite", "You're close!", "Let's double-check", "சரியில்லை", "लगभग सही"].some(kw => solutionText.includes(kw))) {
                     setBotState('wrong');
                 } else {
                     setBotState('default');
@@ -626,9 +623,13 @@
             setBotState('default');
         });
 
+        // MODIFICATION: Add event listener for the language dropdown
+        languageSelector.addEventListener('change', (event) => {
+            setLanguage(event.target.value);
+        });
+
         // Initial setup
-        setLanguage('en');
-        appendMessage('ai', translations[currentLanguage].welcome);
+        setLanguage('en'); // Set default language on load
     </script>
 </body>
 </html>
