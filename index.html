@@ -416,7 +416,7 @@
             ta: {
                 placeholder: "கேள்வி கேளுங்கள் அல்லது மொழியை மாற்றுங்கள்...",
                 hint: "குறிப்பு, தயவுசெய்து! 💡",
-                welcome: "வணக்கம்! நான் சாக்ரடிக் மைண்ட். வாருங்கள் கணக்குகளைத் தீர்ப்போம்! � 'ஆங்கிலத்திற்கு மாறு' அல்லது 'ஹிந்தியைப் பயன்படுத்து' என்றும் நீங்கள் கூறலாம்.",
+                welcome: "வணக்கம்! நான் சாக்ரடிக் மைண்ட். வாருங்கள் கணக்குகளைத் தீர்ப்போம்! 🚀 'ஆங்கிலத்திற்கு மாறு' அல்லது 'ஹிந்தியைப் பயன்படுத்து' என்றும் நீங்கள் கூறலாம்.",
                 connectionError: "<p>இணைப்பதில் ஒரு சிறிய சிக்கல் உள்ளது. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.</p>",
                 languageChanged: "சரி, நான் தமிழுக்கு மாறிவிட்டேன்."
             },
@@ -518,14 +518,15 @@
             return "I'm not sure how to respond to that. Could you try rephrasing?";
         }
 
+        // MODIFICATION: Improved language detection to be more flexible
         function checkForLanguageChange(userInput) {
             const lowerInput = userInput.toLowerCase();
             let newLang = null;
-            if (lowerInput.includes('tamil') || lowerInput.includes('தமிழ்')) {
+            if (lowerInput.includes('tam') || lowerInput.includes('தமிழ்')) {
                 newLang = 'ta';
-            } else if (lowerInput.includes('hindi') || lowerInput.includes('हिन्दी')) {
+            } else if (lowerInput.includes('hin') || lowerInput.includes('हिन्दी')) {
                 newLang = 'hi';
-            } else if (lowerInput.includes('english')) {
+            } else if (lowerInput.includes('eng')) {
                 newLang = 'en';
             }
             if (newLang && newLang !== currentLanguage) {
@@ -567,19 +568,26 @@
                 const solutionText = await callGeminiApi(chatHistory);
                 chatHistory.push({ role: 'model', parts: [{ text: solutionText }] });
 
-                // MODIFICATION: Added "Exactly!" and equivalents to trigger celebration on correct steps.
-                const celebratoryKeywords = [
-                    "Congratulations", "Amazing job", "You solved it", "math star", "Exactly!", 
-                    "வாழ்த்துக்கள்", "அற்புதம்", "சரியாக",
-                    "बधाई हो", "बहुत बढ़िया", "बिल्कुल सही"
+                // MODIFICATION: Separated keywords for final answer vs. correct step
+                const finalAnswerKeywords = [
+                    "Congratulations", "Amazing job", "You solved it", "math star", 
+                    "வாழ்த்துக்கள்", "அற்புதம்",
+                    "बधाई हो", "बहुत बढ़िया"
                 ];
-                if (celebratoryKeywords.some(kw => solutionText.includes(kw))) {
+                const correctStepKeywords = ["Exactly!", "சரியாக", "बिल्कुल सही"];
+
+                if (finalAnswerKeywords.some(kw => solutionText.includes(kw))) {
+                    // Big celebration for the final answer
                     setBotState('celebrate');
                     tutorBotContainer.classList.add('fly');
                     setTimeout(() => {
                         tutorBotContainer.classList.remove('fly');
                     }, 3500);
-                } else if (["Not quite", "You're close!", "Let's double-check", "சரியில்லை", "लगभग सही"].some(kw => solutionText.includes(kw))) {
+                } else if (correctStepKeywords.some(kw => solutionText.includes(kw))) {
+                    // Small celebration for a correct step
+                    setBotState('celebrate');
+                }
+                else if (["Not quite", "You're close!", "Let's double-check", "சரியில்லை", "लगभग सही"].some(kw => solutionText.includes(kw))) {
                     setBotState('wrong');
                 } else {
                     setBotState('default');
@@ -624,4 +632,3 @@
     </script>
 </body>
 </html>
-�
