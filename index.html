@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socratic Mind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        MathJax = {
+          tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+          svg: { fontCache: 'global' }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            overflow: hidden;
+            color: white;
+        }
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        #tutor-bot-container {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        #tutor-bot {
+            width: 150px;
+            height: 180px;
+            position: relative;
+            animation: bot-float 6s ease-in-out infinite;
+        }
+        .bot-antenna, .bot-head, .bot-body {
+            transition: transform 0.5s ease-in-out;
+        }
+        .bot-antenna {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            width: 4px;
+            height: 20px;
+            background: #9ca3af;
+            border-radius: 2px;
+            transform-origin: bottom;
+        }
+        .bot-antenna::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #34d399;
+            box-shadow: 0 0 10px #34d399;
+        }
+        .bot-head {
+            width: 80px;
+            height: 70px;
+            background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
+            border-radius: 50% 50% 40% 40%;
+            margin: 10px auto 0;
+            position: relative;
+            border: 2px solid #fff;
+        }
+        .bot-face-screen {
+            width: 60px;
+            height: 40px;
+            background: #000;
+            position: absolute;
+            top: 15px;
+            left: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px #4f46e5;
+            transition: box-shadow 0.3s;
+        }
+        .bot-eye {
+            position: absolute;
+            top: 12px;
+            width: 8px;
+            height: 12px;
+            background: #5eead4;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #5eead4;
+            animation: blink 4s infinite;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .bot-eye.left { left: 15px; }
+        .bot-eye.right { right: 15px; }
+        .bot-smile {
+             position: absolute;
+             bottom: 8px;
+             left: 50%;
+             transform: translateX(-50%);
+             width: 15px;
+             height: 5px;
+             border: 2px solid #5eead4;
+             border-top-color: transparent;
+             border-radius: 0 0 10px 10px;
+        }
+        .bot-body {
+            width: 100px;
+            height: 90px;
+            background: linear-gradient(145deg, #d1d5db, #9ca3af);
+            border-radius: 30px;
+            margin: -10px auto 0;
+            position: relative;
+            border: 2px solid #fff;
+        }
+         .bot-logo {
+            width: 30px;
+            height: 30px;
+            background: #facc15;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        @keyframes bot-float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-20px) rotate(5deg); } }
+        @keyframes blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+        
+        .bot-wrong .bot-face-screen { box-shadow: 0 0 20px #ef4444; }
+        .bot-wrong .bot-eye { background-color: #ef4444; box-shadow: 0 0 15px #ef4444; }
+        .bot-wrong { animation: bot-shake 0.5s ease-in-out; }
+        .bot-wrong .bot-head { animation: dismantle-head 1.5s ease-in-out forwards; }
+        .bot-wrong .bot-body { animation: dismantle-body 1.5s ease-in-out forwards; }
+        .bot-wrong .bot-antenna { animation: dismantle-antenna 1.5s ease-in-out forwards; }
+
+        .bot-celebrate .bot-face-screen { box-shadow: 0 0 20px #22c55e; }
+        .bot-celebrate .bot-eye.right { animation: bot-delayed-wink 1.2s ease-in-out; }
+        .bot-celebrate .bot-eye { background-color: #22c55e; box-shadow: 0 0 15px #22c55e; }
+        
+        @keyframes bot-delayed-wink {
+            0%, 65% { transform: scaleY(1); }
+            75%, 95% { transform: scaleY(0.1); }
+            100% { transform: scaleY(1); }
+        }
+
+        @keyframes bot-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+        @keyframes dismantle-head {
+            0% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-50px) rotate(30deg) scale(0.8); opacity: 0.5; }
+            100% { transform: translateY(0) rotate(0); }
+        }
+        @keyframes dismantle-body {
+            0% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(50px) rotate(-20deg) scale(0.9); opacity: 0.5; }
+            100% { transform: translateY(0) rotate(0); }
+        }
+        @keyframes dismantle-antenna {
+            0% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-80px) rotate(720deg) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) rotate(0); }
+        }
+        
+        #tutor-bot-container.fly {
+            animation: bot-fly-across 3.5s ease-in-out 1;
+        }
+        @keyframes bot-fly-across {
+            0% {
+                transform: translateX(-50vw) translateY(0) rotate(0deg);
+            }
+            30% {
+                transform: translateX(0) translateY(-10vh) rotate(20deg);
+            }
+            70% {
+                transform: translateX(50vw) translateY(-15vh) rotate(-20deg);
+            }
+            100% {
+                transform: translateX(150vw) translateY(0vh) rotate(30deg);
+            }
+        }
+
+        #chat-container {
+            position: fixed;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            height: 50vh;
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-mask-image: linear-gradient(to top, black 80%, transparent 100%);
+            mask-image: linear-gradient(to top, black 80%, transparent 100%);
+        }
+        .message-wrapper {
+            transition: transform 0.3s, opacity 0.3s;
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        .message-wrapper.show {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .bot-bubble { background: linear-gradient(135deg, #14b8a6, #8b5cf6); color: white; }
+        .user-bubble { background-color: rgba(255, 255, 255, 0.1); color: #e5e7eb; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <canvas id="background-canvas"></canvas>
+    <div id="animation-container"></div>
+
+    <!-- Bot Character -->
+    <div id="tutor-bot-container">
+        <div id="tutor-bot">
+            <div class="bot-antenna" style="transform: translateX(-15px) rotate(-15deg);"></div>
+            <div class="bot-antenna" style="transform: translateX(15px) rotate(15deg);"></div>
+            <div class="bot-head">
+                <div class="bot-face-screen">
+                    <div class="bot-eye left"></div>
+                    <div class="bot-eye right"></div>
+                    <div class="bot-smile"></div>
+                </div>
+            </div>
+            <div class="bot-body">
+                <div class="bot-logo">😊</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat UI -->
+    <div id="chat-ui-container" class="fixed bottom-0 left-0 right-0 w-full">
+        <div id="chat-container" class="space-y-4">
+            <!-- Messages Appear Here -->
+        </div>
+
+        <!-- Footer / Input -->
+        <footer class="p-4 max-w-2xl mx-auto">
+             <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2 ml-2">
+                 <img id="image-preview" class="w-full h-full object-cover rounded-md border-2 border-teal-400 shadow-lg">
+                 <button id="remove-image" type="button" class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md font-bold">&times;</button>
+             </div>
+            <form id="math-form" class="flex items-center gap-2">
+                <label for="image-upload" class="p-3 rounded-full bg-white/10 border border-gray-600 cursor-pointer hover:bg-white/20 transition-colors duration-200 shadow-sm backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                    <input id="image-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/webp" />
+                </label>
+                <textarea id="problem" name="problem" rows="1" class="flex-grow block w-full rounded-full bg-gray-800/50 border border-gray-600 shadow-xl text-white focus:border-teal-500 focus:ring-teal-500 sm:text-base p-3 px-5 resize-none backdrop-blur-sm" placeholder="Ask a math question..."></textarea>
+                <button id="hint-button" type="button" class="bg-yellow-500 text-white p-3 rounded-full font-semibold hover:bg-yellow-600 focus:outline-none transition-transform duration-200 hover:scale-110 shadow-lg">💡</button>
+                <button type="submit" id="submit-button" class="bg-teal-500 text-white p-3 rounded-full font-semibold hover:bg-teal-600 focus:outline-none transition-transform duration-200 hover:scale-110 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <script>
+        // --- Canvas Background Animation ---
+        const canvas = document.getElementById('background-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const mouse = { x: undefined, y: undefined, radius: 150 };
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+        });
+        let spaceObjects = [];
+        const mathChars = ['½', '¾', '⅓', '1', '3', '4', '5', '+', '−', '×', '÷', '√', 'π', 'α', 'β'];
+        const ballColors = [
+            ['#ef4444', '#3b82f6'],
+            ['#22c55e', '#f97316', '#a855f7'],
+            ['#facc15', '#ef4444', '#a855f7', '#65a30d']
+        ];
+        class SpaceObject {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.density = (Math.random() * 30) + 1;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                const typeChance = Math.random();
+                if (typeChance > 0.95) {
+                    this.type = 'ball';
+                    this.size = Math.random() * 30 + 20;
+                    this.colors = ballColors[Math.floor(Math.random() * ballColors.length)];
+                } else if (typeChance > 0.85) {
+                    this.type = 'math';
+                    this.char = mathChars[Math.floor(Math.random() * mathChars.length)];
+                    this.size = Math.random() * 20 + 15;
+                } else {
+                    this.type = 'star';
+                    this.size = Math.random() * 2 + 1;
+                }
+            }
+            update() {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    let forceDirectionX = dx / distance;
+                    let forceDirectionY = dy / distance;
+                    let maxDistance = mouse.radius;
+                    let force = (maxDistance - distance) / maxDistance;
+                    let directionX = forceDirectionX * force * this.density;
+                    let directionY = forceDirectionY * force * this.density;
+                    this.x -= directionX;
+                    this.y -= directionY;
+                } else {
+                    if (this.x !== this.baseX) { this.x -= (this.x - this.baseX) / 10; }
+                    if (this.y !== this.baseY) { this.y -= (this.y - this.baseY) / 10; }
+                }
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                this.baseX += this.speedX;
+                this.baseY += this.speedY;
+                if (this.baseX < 0 || this.baseX > canvas.width) this.speedX *= -1;
+                if (this.baseY < 0 || this.baseY > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 2;
+                if (this.type === 'ball') {
+                    const segments = this.colors.length;
+                    const anglePerSegment = (Math.PI * 2) / segments;
+                    for (let i = 0; i < segments; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.arc(this.x, this.y, this.size, i * anglePerSegment, (i + 1) * anglePerSegment);
+                        ctx.closePath();
+                        ctx.fillStyle = this.colors[i];
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+                } else if (this.type === 'math') {
+                    ctx.font = `${this.size}px 'Nunito'`;
+                    ctx.fillText(this.char, this.x, this.y);
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        function initSpace() {
+            spaceObjects = [];
+            for (let i = 0; i < 150; i++) {
+                spaceObjects.push(new SpaceObject());
+            }
+        }
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const gradient = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, Math.max(canvas.width, canvas.height)/1.5);
+            gradient.addColorStop(0, 'rgba(129, 140, 248, 0.2)');
+            gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.1)');
+            gradient.addColorStop(1, 'rgba(12, 10, 36, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            spaceObjects.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animateCanvas);
+        }
+        initSpace();
+        animateCanvas();
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initSpace();
+        });
+
+        // --- Core Chat Logic ---
+        const tutorBotContainer = document.getElementById('tutor-bot-container');
+        const tutorBot = document.getElementById('tutor-bot');
+        const chatContainer = document.getElementById('chat-container');
+        const form = document.getElementById('math-form');
+        const problemInput = document.getElementById('problem');
+        const submitButton = document.getElementById('submit-button');
+        const hintButton = document.getElementById('hint-button');
+        const imageUpload = document.getElementById('image-upload');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image');
+
+        let chatHistory = [];
+        let imageBase64 = null;
+        let currentLanguage = 'en';
+
+        const translations = {
+            en: {
+                placeholder: "Ask a question or change language...",
+                hint: "Hint, please! 💡",
+                welcome: "Hello! I'm Socratic Mind. Let's solve some problems! 🚀 You can also say 'switch to tamil' or 'use hindi'.",
+                connectionError: "<p>I seem to be having a little trouble connecting. Please try again in a moment.</p>",
+                languageChanged: "Okay, I've switched to English."
+            },
+            ta: {
+                placeholder: "கேள்வி கேளுங்கள் அல்லது மொழியை மாற்றுங்கள்...",
+                hint: "குறிப்பு, தயவுசெய்து! 💡",
+                welcome: "வணக்கம்! நான் சாக்ரடிக் மைண்ட். வாருங்கள் கணக்குகளைத் தீர்ப்போம்! � 'ஆங்கிலத்திற்கு மாறு' அல்லது 'ஹிந்தியைப் பயன்படுத்து' என்றும் நீங்கள் கூறலாம்.",
+                connectionError: "<p>இணைப்பதில் ஒரு சிறிய சிக்கல் உள்ளது. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.</p>",
+                languageChanged: "சரி, நான் தமிழுக்கு மாறிவிட்டேன்."
+            },
+            hi: {
+                placeholder: "प्रश्न पूछें या भाषा बदलें...",
+                hint: "संकेत, कृपया! 💡",
+                welcome: "नमस्ते! मैं सुकराती मन हूँ। चलो समस्याओं का समाधान करें! 🚀 आप 'अंग्रेजी में बदलें' या 'तमिल का उपयोग करें' भी कह सकते हैं।",
+                connectionError: "<p>मुझे कनेक्ट होने में थोड़ी परेशानी हो रही है। कृपया कुछ देर में पुन: प्रयास करें।</p>",
+                languageChanged: "ठीक है, मैंने हिंदी में स्विच कर लिया है।"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            problemInput.placeholder = translations[lang].placeholder;
+        }
+
+        function setBotState(state) {
+            tutorBot.className = '';
+            if (state) tutorBot.classList.add(`bot-${state}`);
+        }
+
+        function appendMessage(sender, message, imageUrl = null) {
+            const messageWrapper = document.createElement('div');
+            let bubbleClass = sender === 'user' ? 'user-bubble' : 'bot-bubble';
+            let justification = sender === 'user' ? 'justify-end' : 'justify-start';
+            messageWrapper.className = `flex ${justification} message-wrapper`;
+            
+            let formattedMessage = message.replace(/\n/g, '<br>');
+
+            messageWrapper.innerHTML = `<div class="${bubbleClass} p-3 rounded-2xl max-w-md shadow-lg">
+                ${imageUrl ? `<img src="${imageUrl}" class="rounded-md mb-2 max-w-xs border-2 border-white/50">` : ''}
+                <p>${formattedMessage}</p>
+            </div>`;
+            
+            chatContainer.appendChild(messageWrapper);
+            setTimeout(() => messageWrapper.classList.add('show'), 10);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        imageUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imageBase64 = e.target.result;
+                    imagePreview.src = imageBase64;
+                    imagePreviewContainer.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeImageBtn.addEventListener('click', () => {
+            imageBase64 = null;
+            imageUpload.value = '';
+            imagePreviewContainer.classList.add('hidden');
+        });
+
+        async function callGeminiApi(history) {
+            const apiKey = "AIzaSyCJPZaLsbyaCehMyjHERioggJUO_dMIvZI"; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const systemPrompt = `You are 'Socratic Mind,' an expert AI math tutor for children. Your SOLE method of teaching is the Socratic method. You MUST respond in the language specified by the user (${currentLanguage}).
+            **Core Directive: NEVER give a direct answer.** Guide the student to find the answer themselves.
+            **Interaction Flow (as numbered steps):**
+            1.  **Acknowledge & Ask (Step 1):** When a student presents a problem, acknowledge it, then ask your first guiding question, explicitly labeling it as "Step 1:".
+            2.  **Guide Step-by-Step:** Based on their response, ask the next targeted question, incrementing the step number (e.g., "Step 2:").
+                * If correct, praise them ("Exactly! 🎉") and ask the next guiding question.
+                * If incorrect, gently correct them ("Not quite, but let's rethink that. 🤔") and re-ask the current step's question. Do not advance the step number.
+            3.  **One Question ONLY:** You MUST ask only ONE question at a time and then STOP.
+            4.  **Hint Request:** If the user says "hint", provide a small clue for the current step.
+            5.  **The Final Solution:** ONLY when the student has solved it, provide the full, final solution. Start this final message with a very enthusiastic, kid-friendly congratulatory phrase. **Format this final, full solution with clear, numbered steps. Each step must be a simple, single sentence on its own line to make it easy to follow.**
+            **Style Rules:**
+            - **Tone:** Friendly, patient, and very encouraging.
+            - **Clarity:** Explain concepts in a simple, linear, line-by-line way. The language must be easy for a student in grades 6-12 to understand. Avoid complex vocabulary.
+            - **LaTeX:** Use LaTeX for ALL math notation (e.g., $x^2$).
+            - **Language:** Your entire response must be in the target language: ${currentLanguage}.`;
+
+            const payload = {
+                contents: history,
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("API Error Response:", errorBody);
+                 throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 && result.candidates[0].content.parts) {
+                return result.candidates[0].content.parts[0].text;
+            }
+            return "I'm not sure how to respond to that. Could you try rephrasing?";
+        }
+
+        function checkForLanguageChange(userInput) {
+            const lowerInput = userInput.toLowerCase();
+            let newLang = null;
+            if (lowerInput.includes('tamil') || lowerInput.includes('தமிழ்')) {
+                newLang = 'ta';
+            } else if (lowerInput.includes('hindi') || lowerInput.includes('हिन्दी')) {
+                newLang = 'hi';
+            } else if (lowerInput.includes('english')) {
+                newLang = 'en';
+            }
+            if (newLang && newLang !== currentLanguage) {
+                setLanguage(newLang);
+                appendMessage('ai', translations[newLang].languageChanged);
+                return true;
+            }
+            return false;
+        }
+
+
+        async function handleSubmission(userInput, isHint = false) {
+            if (!userInput && !imageBase64) return;
+
+            if (!isHint && checkForLanguageChange(userInput)) {
+                problemInput.value = '';
+                return; 
+            }
+
+            const displayInput = isHint ? translations[currentLanguage].hint : userInput;
+            appendMessage('user', displayInput, imageBase64);
+            
+            const userParts = [];
+            if (userInput) userParts.push({ text: userInput });
+            if (imageBase64) {
+                userParts.push({ inlineData: { mimeType: imageBase64.split(';')[0].split(':')[1], data: imageBase64.split(',')[1] } });
+            }
+            chatHistory.push({ role: 'user', parts: userParts });
+
+            problemInput.value = '';
+            imageBase64 = null;
+            imageUpload.value = '';
+            imagePreviewContainer.classList.add('hidden');
+            problemInput.style.height = 'auto';
+            submitButton.disabled = true;
+            hintButton.disabled = true;
+
+            try {
+                const solutionText = await callGeminiApi(chatHistory);
+                chatHistory.push({ role: 'model', parts: [{ text: solutionText }] });
+
+                // MODIFICATION: Added "Exactly!" and equivalents to trigger celebration on correct steps.
+                const celebratoryKeywords = [
+                    "Congratulations", "Amazing job", "You solved it", "math star", "Exactly!", 
+                    "வாழ்த்துக்கள்", "அற்புதம்", "சரியாக",
+                    "बधाई हो", "बहुत बढ़िया", "बिल्कुल सही"
+                ];
+                if (celebratoryKeywords.some(kw => solutionText.includes(kw))) {
+                    setBotState('celebrate');
+                    tutorBotContainer.classList.add('fly');
+                    setTimeout(() => {
+                        tutorBotContainer.classList.remove('fly');
+                    }, 3500);
+                } else if (["Not quite", "You're close!", "Let's double-check", "சரியில்லை", "लगभग सही"].some(kw => solutionText.includes(kw))) {
+                    setBotState('wrong');
+                } else {
+                    setBotState('default');
+                }
+
+                appendMessage('ai', solutionText);
+                await MathJax.typesetPromise();
+
+            } catch (error) {
+                console.error('Error:', error);
+                appendMessage('ai', translations[currentLanguage].connectionError);
+            } finally {
+                submitButton.disabled = false;
+                hintButton.disabled = false;
+                setTimeout(() => setBotState('default'), 2000);
+            }
+        }
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const userInput = problemInput.value.trim();
+            if (!userInput && !imageBase64) return;
+            handleSubmission(userInput);
+        });
+        
+        hintButton.addEventListener('click', () => {
+            handleSubmission("hint", true);
+        });
+        
+        problemInput.addEventListener('input', () => {
+            problemInput.style.height = 'auto';
+            problemInput.style.height = (problemInput.scrollHeight) + 'px';
+            setBotState('curious');
+        });
+        problemInput.addEventListener('blur', () => {
+            setBotState('default');
+        });
+
+        // Initial setup
+        setLanguage('en');
+        appendMessage('ai', translations[currentLanguage].welcome);
+    </script>
+</body>
+</html>
+�
